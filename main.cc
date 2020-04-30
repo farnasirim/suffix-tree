@@ -13,7 +13,8 @@ void uk();
 void uk() {
   srand(1231231);
   std::string str = "something";
-  str = "abcabxabcd$";
+  // str = "abcabxabcd$";
+  str = "a";
   // std::vector<uint16_t> strnums(str.begin(), str.end());
   // for(auto it: strnums) {
   //   std::cout << it << " ";

@@ -18,7 +18,7 @@ CXX_WARNINGS=-pedantic -Wall -Wextra -Wcast-align -Wcast-qual \
 	-Wshadow -Wwrite-strings -Wno-unused-parameter -Wfloat-equal \
 	-pedantic
 # O2
-CXX_FLAGS := -g3 -std=c++14
+CXX_FLAGS := -g3 -std=c++17
 
 %.o: %.cc $(CXX_HEADERS) Makefile
 	g++ $(CXX_FLAGS) $(CXX_WARNINGS) $(CXX_INCLUDE) -MMD -MP -c -o $@ $<
