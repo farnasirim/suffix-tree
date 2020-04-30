@@ -45,12 +45,13 @@ class UkkonenNode {
   }
 
   NodeP get_link() const {
+    assert(link_ != nullptr);
     return link_;
   }
 
  private:
   std::map<T, NodeP> children_;
-  NodeP link_;
+  NodeP link_ = nullptr;
 };
 
 /**
@@ -87,10 +88,11 @@ class Ukkonen {
         root_(std::make_shared<Node>()),
         top_(root_) {
 
+    // falsum_->root = root_;
     auto st = std::numeric_limits<T>::min();
     auto mx = std::numeric_limits<T>::max();
     while(true) {
-      falsum_->set_child(st, std::make_shared<Node>());
+      falsum_->set_child(st, root_);
       if(st == mx) {
         break;
       }
@@ -100,34 +102,57 @@ class Ukkonen {
     root_->set_link(falsum_);
 
     for (auto ch : str_) {
-      deb(ch);
+      // deb(ch);
       insert(ch);
     }
 
   }
 
   void insert(T ch) {
-    auto r = top_;
+    NodeP r = top_;
+    // deb(top_.get());
+    // deb(r.get());
+    assert(r == top_);
     NodeP old_child = nullptr;
 
     assert(r != nullptr);
+    // deb(falsum_.get());
+    // deb(root_.get());
+    // debline();
     while(!r->has_child(ch)) {
-      deb(r == root_);
+      // deb(r == root_);
       auto child = std::make_shared<Node>();
+      // deb(child.get());
+
+      assert(r != falsum_);
       r->set_child(ch, child);
       if(r != top_) {
         assert(child != old_child);
+        assert(old_child != falsum_);
+        // debout("set_link 1");
+        // deb(old_child.get());
+        // deb(child.get());
         old_child->set_link(child);
       }
       old_child = child;
+
+      // deb(r.get());
+      // deb(r->get_link().get());
       r = r->get_link();
     }
-    deb(r == falsum_);
+    // debline();
+
+    // deb(r == falsum_);
     assert(old_child != r->get_child(ch));
+    // debout("set_link 2");
+    // deb(old_child.get());
+    // deb(r->get_child(ch));
+    // deb(r.get());
+    // deb(ch);
     old_child->set_link(r->get_child(ch));
     top_ = top_->get_child(ch);
-    deb(top_ == root_);
-    deb(top_ == root_->get_child(ch));
+    // deb(top_ == root_);
+    // deb(top_ == root_->get_child(ch));
     assert(top_ != nullptr);
     assert(r != nullptr);
   }
@@ -151,16 +176,23 @@ class Ukkonen {
     std::string bef = "-- ";
     std::string aft = " --> ";
 
+    int rem = current->get_children_ref().size();
     for(auto& char_child: current->get_children_ref()) {
       std::stringstream ss;
       ss << char_child.first;
       auto num_spaces = ss.str().size();
       std::cout << indent << bef << ss.str() << aft;
+      rem -= 1;
+      if(rem == 0) {
+      indent.back() = ' ';
+      }
       dfs(char_child.second,
           indent +
           std::string(num_spaces + bef.size() + aft.size(), ' ')
          );
     }
+    indent.pop_back();
+    std::cout << indent << std::endl;
   }
 
   std::vector<T> str_;

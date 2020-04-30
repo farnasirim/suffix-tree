@@ -13,18 +13,24 @@ void uk();
 void uk() {
   srand(1231231);
   std::string str = "something";
-  // str = "abcabxabcd";
-  str = "ab";
-  std::vector<uint16_t> strnums(str.begin(), str.end());
+  str = "abcabxabcd$";
+  // std::vector<uint16_t> strnums(str.begin(), str.end());
+  // for(auto it: strnums) {
+  //   std::cout << it << " ";
+  // }
+  // std::cout << std::endl;
+  // auto st = std::make_shared<Ukkonen<uint16_t>>(strnums);
+
+  std::vector<char> strnums(str.begin(), str.end());
   for(auto it: strnums) {
     std::cout << it << " ";
   }
   std::cout << std::endl;
-  Ukkonen<uint16_t> st(strnums);
+  auto st = std::make_shared<Ukkonen<char>>(strnums);
 
   std::cout << "done " << std::endl;
 
-  st.dfs();
+  st->dfs();
 
   // for(int i = 0; i < 10000; i++) {
   //   size_t mx_len = str.size();
