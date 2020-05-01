@@ -14,7 +14,6 @@
 
 #include "debug.h"
 
-
 // Maybe inherit from enable_shared_from_this ?
 template<typename T>
 class UkkonenNode {
@@ -30,6 +29,7 @@ class UkkonenNode {
     deb(ch);
     deb(this);
     assert(false);
+    // return nullptr;
   }
 
   bool is_leaf() const {
@@ -189,8 +189,9 @@ class Ukkonen {
     deb(active_point.get());
     deb(left_ptr);
     deb(str_[unsigned_or_die(left_ptr)]);
-    dfs();
+    // dfs();
     for(ssize_t i = 0; i < static_cast<ssize_t>(str_.size()); i++) {
+      // std::cout << i << std::endl;
       gind = i;
       deb(i);
       debout("main loop: calling update");
@@ -205,13 +206,29 @@ class Ukkonen {
         active_point = pt;
         left_ptr = lef;
       }
+
       deb(active_point.get());
       deb(left_ptr);
       deb(str_[unsigned_or_die(left_ptr)]);
-      dfs();
+      // dfs();
       debline();
       debout("-------------------------------------------------------");
       debline();
+
+      // {
+      //   std::vector<T> needle;
+      //   for(ssize_t j = 0; j <= i; j++) {
+      //     needle.push_back(str_[static_cast<size_t>(j)]);
+      //     auto result = max_common_prefix(needle);
+      //     std::cout << "needle: ";
+      //     for(auto it: needle) {
+      //       std::cout << it;
+      //     }
+      //     std::cout << std::endl;
+      //     deb(result);
+      //     assert(result == static_cast<size_t>(j + 1));
+      //   }
+      // }
     }
   }
 
@@ -241,10 +258,10 @@ class Ukkonen {
     }
 
     auto new_state = std::make_shared<Node>(
-        corresp_child->get_from(),
+        child_fr,
         child_fr_ind + unsigned_or_die(rig - lef));
 
-    new_state->set_child(str_[unsigned_or_die(child_fr)], corresp_child);
+    new_state->set_child(str_[unsigned_or_die(child_fr_ind + unsigned_or_die(rig - lef + 1))], corresp_child);
     corresp_child->set_from(static_cast<ssize_t>(child_fr_ind + unsigned_or_die(rig - lef + 1)));
 
     node->set_child(str_[unsigned_or_die(lef)], new_state);
@@ -291,13 +308,17 @@ class Ukkonen {
     return {active_point, left_ptr};
   }
 
-  // operates on active_point_, left_ptr_, ind
-  std::pair<NodeP, ssize_t> canonize(NodeP node, ssize_t lef, ssize_t rig) {
+  std::pair<NodeP, ssize_t> canonize(NodeP node, ssize_t lef, ssize_t rig) const {
     if(rig < lef) {
       return {node, lef};
     }
 
     auto current = node->get_child(str_[unsigned_or_die(lef)]);
+    // if(current == nullptr) {
+    //   std::cout << "*******************************" << std::endl;
+    //   dfs();
+    //   assert(false);
+    // }
     while(current->get_to() - current->get_from() <= rig - lef) {
       auto cfr = current->get_from();
       auto cto = current->get_to();
@@ -306,6 +327,11 @@ class Ukkonen {
       if(lef <= rig) {
         current = node->get_child(str_[unsigned_or_die(lef)]);
       }
+    // if(current == nullptr) {
+    //   std::cout << "*******************************" << std::endl;
+    //   dfs();
+    //   assert(false);
+    // }
     }
     return {node, lef};
   }
@@ -367,6 +393,28 @@ class Ukkonen {
     debline();
   }
 
+  typename std::vector<T>::iterator max_common_prefix(
+      typename std::vector<T>::iterator be,
+      typename std::vector<T>::iterator en) {
+
+    auto current = root_;
+    ssize_t ptr = 0;
+    while(be != en) {
+      if(current == root_ || current->get_from() + ptr > current->get_to()) {
+        if(!current->has_child(*be)) {
+          break;
+        }
+        ptr = 1;
+        current = current->get_child(*be);
+      }
+      if(str_[static_cast<size_t>(current->get_from() + ptr)] == *be) {
+        ptr ++;
+      }
+      ++be;
+    }
+    return be;
+  }
+
  private:
 
   void dfs(NodeP current, std::string indent) const {
@@ -412,6 +460,28 @@ class Ukkonen {
     }
     indent.pop_back();
     std::cout << indent << std::endl;
+  }
+
+
+  size_t max_common_prefix(const std::vector<T>& v) {
+    size_t ret = 0;
+    auto current = root_;
+    ssize_t ptr = 0;
+    for(auto it: v) {
+      if(current == root_ || current->get_from() + ptr > current->get_to()) {
+        if(!current->has_child(it)) {
+          break;
+        }
+        ret += 1;
+        ptr = 1;
+        current = current->get_child(it);
+      }
+      if(str_[static_cast<size_t>(current->get_from() + ptr)] == it) {
+        ret += 1;
+        ptr ++;
+      }
+    }
+    return ret;
   }
 
   std::vector<T> str_;

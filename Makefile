@@ -12,13 +12,15 @@ CXX_WARNINGS=-pedantic -Wall -Wextra -Wcast-align -Wcast-qual \
 	-Wlogical-op -Wmissing-declarations -Wmissing-include-dirs -Wnoexcept \
 	-Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow \
 	-Wsign-conversion -Wsign-promo -Wstrict-null-sentinel \
-	-Wstrict-overflow=5 -Wswitch-default -Wundef -Werror -Wno-unused \
+	-Wstrict-overflow=2 -Wswitch-default -Wundef -Werror -Wno-unused \
 	-Wall -Wextra -Wformat-nonliteral -Wcast-align -Wpointer-arith \
 	-Wmissing-declarations -Winline -Wundef -Wcast-qual \
 	-Wshadow -Wwrite-strings -Wno-unused-parameter -Wfloat-equal \
 	-pedantic
-# O2
-CXX_FLAGS := -g3 -std=c++17
+
+CXX_FLAGS := -std=c++17
+CXX_FLAGS += -O3
+# CXX_FLAGS += -DST_DEBUG -g3
 
 %.o: %.cc $(CXX_HEADERS) Makefile
 	g++ $(CXX_FLAGS) $(CXX_WARNINGS) $(CXX_INCLUDE) -MMD -MP -c -o $@ $<
