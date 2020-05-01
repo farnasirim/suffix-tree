@@ -19,6 +19,7 @@ template<typename T>
 class UkkonenNode {
   using NodeP = std::shared_ptr<UkkonenNode>;
  public:
+
   UkkonenNode(int from, int to) noexcept: from_(from), to_(to) { }
 
   NodeP get_child(T ch) const {
@@ -191,9 +192,9 @@ class Ukkonen {
     deb(str_[unsigned_or_die(left_ptr)]);
     // dfs();
     for(ssize_t i = 0; i < static_cast<ssize_t>(str_.size()); i++) {
-      // std::cout << i << std::endl;
+      // std::cout << i << "/" << str_.size()<< std::endl;
       gind = i;
-      deb(i);
+      // deb(i);
       debout("main loop: calling update");
       {
         auto [pt, lef] = update(active_point, left_ptr, i);
@@ -207,29 +208,36 @@ class Ukkonen {
         left_ptr = lef;
       }
 
-      deb(active_point.get());
-      deb(left_ptr);
-      deb(str_[unsigned_or_die(left_ptr)]);
+      // deb(active_point.get());
+      // deb(left_ptr);
+      // deb(str_[unsigned_or_die(left_ptr)]);
       // dfs();
-      debline();
-      debout("-------------------------------------------------------");
-      debline();
+      // debline();
+      // debout("-------------------------------------------------------");
+      // debline();
 
-      // {
-      //   std::vector<T> needle;
-      //   for(ssize_t j = 0; j <= i; j++) {
-      //     needle.push_back(str_[static_cast<size_t>(j)]);
-      //     auto result = max_common_prefix(needle);
-      //     std::cout << "needle: ";
-      //     for(auto it: needle) {
-      //       std::cout << it;
-      //     }
-      //     std::cout << std::endl;
-      //     deb(result);
-      //     assert(result == static_cast<size_t>(j + 1));
-      //   }
-      // }
     }
+
+    // {
+    //   std::vector<T> needle;
+    //   for(auto ch: str_) {
+    //     needle.push_back(ch);
+    //     if(__builtin_clz(needle.size()) != __builtin_clz(needle.size() + 1)) {
+    //       // std::cout << "running check for: ";
+    //       // for(auto it: needle) {
+    //       //   std::cout << it;
+    //       // }
+
+    //       auto res = max_common_prefix(needle.begin(), needle.end());
+    //       auto iterator_based = static_cast<size_t>(res - needle.begin());
+
+    //       // std::cout << std::endl;
+    //       assert(max_common_prefix(needle) == needle.size());
+    //       assert(iterator_based == needle.size());
+    //       // std::cout << " check needle size: " << (needle.size()) << std::endl;
+    //     }
+    //   }
+    // }
   }
 
   ssize_t gind;
@@ -393,6 +401,27 @@ class Ukkonen {
     debline();
   }
 
+  size_t max_common_prefix(const std::vector<T>& v) {
+    size_t ret = 0;
+    auto current = root_;
+    ssize_t ptr = 0;
+    for(auto it: v) {
+      if(current == root_ || current->get_from() + ptr > current->get_to()) {
+        if(!current->has_child(it)) {
+          break;
+        }
+        ptr = 0;
+        current = current->get_child(it);
+      }
+
+      if(str_[static_cast<size_t>(current->get_from() + ptr)] == it) {
+        ret += 1;
+        ptr ++;
+      }
+    }
+    return ret;
+  }
+
   typename std::vector<T>::iterator max_common_prefix(
       typename std::vector<T>::iterator be,
       typename std::vector<T>::iterator en) {
@@ -404,11 +433,16 @@ class Ukkonen {
         if(!current->has_child(*be)) {
           break;
         }
-        ptr = 1;
+        ptr = 0;
         current = current->get_child(*be);
+      }
+      if(current->get_from() + ptr > current->get_to()) {
+        break;
       }
       if(str_[static_cast<size_t>(current->get_from() + ptr)] == *be) {
         ptr ++;
+      } else {
+        break;
       }
       ++be;
     }
@@ -460,28 +494,6 @@ class Ukkonen {
     }
     indent.pop_back();
     std::cout << indent << std::endl;
-  }
-
-
-  size_t max_common_prefix(const std::vector<T>& v) {
-    size_t ret = 0;
-    auto current = root_;
-    ssize_t ptr = 0;
-    for(auto it: v) {
-      if(current == root_ || current->get_from() + ptr > current->get_to()) {
-        if(!current->has_child(it)) {
-          break;
-        }
-        ret += 1;
-        ptr = 1;
-        current = current->get_child(it);
-      }
-      if(str_[static_cast<size_t>(current->get_from() + ptr)] == it) {
-        ret += 1;
-        ptr ++;
-      }
-    }
-    return ret;
   }
 
   std::vector<T> str_;
