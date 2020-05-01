@@ -27,6 +27,8 @@ class UkkonenNode {
     if(it != children_.end()) {
       return it->second;
     }
+    deb(ch);
+    deb(this);
     assert(false);
   }
 
@@ -48,6 +50,10 @@ class UkkonenNode {
 
   void set_link(NodeP link) {
     link_ = link;
+  }
+
+  NodeP get_link_deb() const {
+    return link_;
   }
 
   NodeP get_link() const {
@@ -176,11 +182,17 @@ class Ukkonen {
     root_->set_link(falsum_);
 
     NodeP active_point = root_;
-    size_t left_ptr = 0;
+    ssize_t left_ptr = 0;
 
     inf_ = str_.size() - 1;
 
-    for(size_t i = 0; i < str_.size(); i++) {
+    deb(active_point.get());
+    deb(left_ptr);
+    deb(str_[unsigned_or_die(left_ptr)]);
+    dfs();
+    for(ssize_t i = 0; i < static_cast<ssize_t>(str_.size()); i++) {
+      gind = i;
+      deb(i);
       debout("main loop: calling update");
       {
         auto [pt, lef] = update(active_point, left_ptr, i);
@@ -193,20 +205,27 @@ class Ukkonen {
         active_point = pt;
         left_ptr = lef;
       }
+      deb(active_point.get());
+      deb(left_ptr);
+      deb(str_[unsigned_or_die(left_ptr)]);
+      dfs();
+      debline();
+      debout("-------------------------------------------------------");
+      debline();
     }
   }
 
+  ssize_t gind;
+
   // test and split
   std::pair<bool, NodeP> split_or_is_endpoint(const NodeP& node,
-      size_t lef, size_t rig, T ch) {
-    deb(lef);
-    deb(rig);
+      ssize_t lef, ssize_t rig, T ch) {
 
     if(lef > rig) { // (node, eps): node is already explicit
       return {node->has_child(ch), node};
     }
 
-    auto corresp_child = node->get_child(str_[lef]);
+    auto corresp_child = node->get_child(str_[unsigned_or_die(lef)]);
 
     // If character ch found along the path:
     auto child_fr = corresp_child->get_from();
@@ -214,29 +233,30 @@ class Ukkonen {
     auto child_fr_ind = static_cast<size_t>(child_fr);
     assert_between_close_open(
         static_cast<long long>(0),
-        static_cast<long long>(child_fr_ind + rig - lef + 1),
+        static_cast<long long>(
+          child_fr_ind + unsigned_or_die(rig - lef + 1)),
         static_cast<long long>(str_.size()));
-    if(ch == str_[child_fr_ind + rig - lef + 1]) {
+    if(ch == str_[child_fr_ind + unsigned_or_die(rig - lef + 1)]) {
       return {true, node};
     }
 
     auto new_state = std::make_shared<Node>(
         corresp_child->get_from(),
-        child_fr_ind + rig - lef);
+        child_fr_ind + unsigned_or_die(rig - lef));
 
-    new_state->set_child(child_fr, corresp_child);
-    corresp_child->set_from(static_cast<ssize_t>(child_fr_ind + rig - lef + 1));
+    new_state->set_child(str_[unsigned_or_die(child_fr)], corresp_child);
+    corresp_child->set_from(static_cast<ssize_t>(child_fr_ind + unsigned_or_die(rig - lef + 1)));
 
-    node->set_child(str_[lef], new_state);
+    node->set_child(str_[unsigned_or_die(lef)], new_state);
 
     return {false, new_state};
   }
 
   // returns active_point_, left_ptr_
-  std::pair<NodeP, size_t> update(NodeP active_point,
-      size_t left_ptr, size_t ind) {
+  std::pair<NodeP, ssize_t> update(NodeP active_point,
+      ssize_t left_ptr, ssize_t ind) {
 
-    auto ch = str_[ind];
+    auto ch = str_[unsigned_or_die(ind)];
 
     // (active_point_, (left_ptr_, ind - 1)) is the canonical active point
     auto oldr = root_;
@@ -272,8 +292,22 @@ class Ukkonen {
   }
 
   // operates on active_point_, left_ptr_, ind
-  std::pair<NodeP, size_t> canonize(NodeP node, size_t left, size_t right) {
-    return {nullptr, 0};
+  std::pair<NodeP, ssize_t> canonize(NodeP node, ssize_t lef, ssize_t rig) {
+    if(rig < lef) {
+      return {node, lef};
+    }
+
+    auto current = node->get_child(str_[unsigned_or_die(lef)]);
+    while(current->get_to() - current->get_from() <= rig - lef) {
+      auto cfr = current->get_from();
+      auto cto = current->get_to();
+      lef = lef + cto - cfr + 1;
+      node = current;
+      if(lef <= rig) {
+        current = node->get_child(str_[unsigned_or_die(lef)]);
+      }
+    }
+    return {node, lef};
   }
 
   size_t inf_;
@@ -328,20 +362,27 @@ class Ukkonen {
   //}
 
   void dfs() const {
+    debline();
     dfs(root_, "");
+    debline();
   }
 
  private:
 
   void dfs(NodeP current, std::string indent) const {
     if(current->get_children_ref().empty()) {
-      std::cout << "/" << std::endl;
+      auto link = current->get_link_deb();
+      decltype(link.get()) address = nullptr;
+      if(link != nullptr) {
+        address = link.get();
+      }
+      std::cout << current.get() << " (" << address << ")" << std::endl;
       return;
     }
 
-    std::cout << "O" << std::endl;
+    std::cout << current.get() << " (" << current->get_link().get() << ")" << std::endl;
 
-    indent += "|";
+    indent += "              |";
 
     std::string bef = "-- ";
     std::string aft = " --> ";
@@ -349,9 +390,10 @@ class Ukkonen {
     int rem = current->get_children_ref().size();
     for(auto& [ch, child]: current->get_children_ref()) {
       std::stringstream ss;
-      if(child->get_from()<= child->get_to()) {
-        for(ssize_t i = child->get_from(); i <= child->get_to(); i++) {
-          assert(i > 0);
+      ss << "(" << ch << ") ";
+      if(child->get_from() <= child->get_to()) {
+        for(ssize_t i = child->get_from(); i <= std::min(child->get_to(), gind); i++) {
+          assert(i >= 0);
           ss << str_[static_cast<size_t>(i)];
         }
       } else {

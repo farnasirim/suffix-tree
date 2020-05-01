@@ -8,13 +8,13 @@
 
 #include "debug.h"
 
-void uk();
+void uk(std::string);
 
-void uk() {
-  srand(1231231);
-  std::string str = "something";
-  // str = "abcabxabcd$";
-  str = "a";
+void uk(std::string str) {
+  
+  // srand(1231231);
+  // std::cin >> str;
+  // str = "abcabx";
   // std::vector<uint16_t> strnums(str.begin(), str.end());
   // for(auto it: strnums) {
   //   std::cout << it << " ";
@@ -62,7 +62,20 @@ void uk() {
 
 int main() {
 
-  uk();
+  std::vector<std::string> strs = {
+    "something",
+    "ississ",
+    "ississ$",
+    "abcabxabcd$",
+    "abcdefabxybcdmnabcdex",
+    "abcabxabcd",
+  };
+
+  for(auto it: strs) {
+    deb(it);
+    uk(it);
+    debline();
+  }
 
   return 0;
 }
