@@ -2,7 +2,7 @@
 #include <cassert>
 #include <iostream>
 
-#include <iostream>
+#include <fstream>
 
 #include "ukkonen.h"
 
@@ -11,7 +11,7 @@
 void uk(std::string);
 
 void uk(std::string str) {
-  
+
   // srand(1231231);
   // std::cin >> str;
   // str = "abcabx";
@@ -60,22 +60,91 @@ void uk(std::string str) {
   // }
 }
 
-int main() {
+std::vector<uint8_t> read_file(std::string file_name);
 
-  std::vector<std::string> strs = {
-    "something",
-    "ississ",
-    "ississ$",
-    "abcabxabcd$",
-    "abcdefabxybcdmnabcdex",
-    "abcabxabcd",
-  };
+std::vector<uint8_t> read_file(std::string file_name) {
+  std::ifstream is(file_name, std::fstream::binary);
+  is.seekg (0, is.end);
+  auto length = is.tellg();
+  is.seekg (0, is.beg);
 
-  for(auto it: strs) {
-    deb(it);
-    uk(it);
-    debline();
+  assert(length > 0);
+  char *buffer = new char [static_cast<size_t>(length)];
+  // read data as a block:
+  is.read (buffer, length);
+  assert(is);
+
+  auto ret = std::vector<uint8_t>(buffer, buffer + static_cast<size_t>(length));
+
+  delete[] buffer;
+
+  return ret;
+}
+
+int main(int argc, char **argv) {
+
+  if(argc == 1) {
+    std::vector<std::string> strs = {
+      "something",
+      "ississ",
+      "ississ$",
+      "abcabxabcd$",
+      "abcdefabxybcdmnabcdex",
+      "abcabxabcd",
+    };
+
+    for(auto it: strs) {
+      deb(it);
+      uk(it);
+      debline();
+    }
+    return 0;
   }
+
+  assert(argc >= 3);
+  std::string target_fname = argv[1];
+  std::vector<std::string> bases;
+  for(int i = 2; i <argc; i++) {
+    bases.push_back(argv[i]);
+  }
+
+  std::vector<uint16_t> base_content;
+  for(auto base_fname: bases) {
+    auto content = read_file(base_fname);
+    for(auto& it: content) {
+      if(it == 0) {
+        it = 15;
+      }
+    }
+    base_content.insert(base_content.end(), content.begin(), content.end());
+    base_content.push_back(256); // $
+  }
+
+  auto target = read_file(target_fname);
+  std::vector<uint16_t> target_content(target.begin(), target.end());
+
+  auto st = std::make_shared<Ukkonen<uint16_t>>(base_content);
+
+  auto be = target_content.begin();
+  auto fin = target_content.end();
+
+  std::map<int, int> sizes;
+  while(be != fin ){
+    auto orig = be;
+    be = st->max_common_prefix(be, fin);
+    sizes[be - orig] += 1;
+    if(be == orig) {
+      ++be;
+    }
+  }
+
+  for(auto& it: sizes) {
+    std::cout << it.first << " : " << it.second << std::endl;
+  }
+
+  std::cout << "done" << std::endl;
+
+  std::vector<long long> parts;
 
   return 0;
 }
