@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <iostream>
-
+#include <iomanip>
 #include <fstream>
 
 #include "ukkonen.h"
@@ -9,6 +9,9 @@
 #include "debug.h"
 
 void uk(std::string);
+
+const size_t fixed_overhead = 5;
+const size_t complex_overhead = 9;
 
 void uk(std::string str) {
 
@@ -32,32 +35,6 @@ void uk(std::string str) {
   std::cout << "done " << std::endl;
 
   st->dfs();
-
-  // for(int i = 0; i < 10000; i++) {
-  //   size_t mx_len = str.size();
-  //   size_t current_len = static_cast<unsigned int>(rand()) % mx_len + 1;
-  //   std::string needle;
-  //   if(static_cast<unsigned int>(rand()) & 1) {
-  //     size_t start_at = static_cast<unsigned int>(rand()) % (mx_len - current_len + 1);
-  //     needle = str.substr(start_at, current_len);
-  //   } else {
-  //     for(size_t k = 0; k < current_len; k++) {
-  //       needle += static_cast<unsigned int>(rand()) % ('z' - 'a' + 1) + 'a';
-  //     }
-  //   }
-  //   int expected = str.find(needle) != std::string::npos;
-  //   int actual = st.find(std::vector<uint8_t>(needle.begin(), needle.end()));
-
-  //   if(expected != actual) {
-  //     deb(str);
-  //     deb(needle);
-  //     deb(expected);
-  //     deb(actual);
-  //     assert(false);
-  //   } else {
-  //     deb(needle);
-  //   }
-  // }
 }
 
 std::vector<uint8_t> read_file(std::string file_name);
@@ -81,9 +58,8 @@ std::vector<uint8_t> read_file(std::string file_name) {
   return ret;
 }
 
-int main(int argc, char **argv) {
-
-  if(argc == 1) {
+void test_uk();
+void test_uk() {
     std::vector<std::string> strs = {
       "something",
       "ississ",
@@ -98,6 +74,35 @@ int main(int argc, char **argv) {
       uk(it);
       debline();
     }
+}
+
+void test_self(std::string);
+void test_self(std::string name) {
+  auto content = read_file(name);
+  auto st = std::make_shared<Ukkonen<uint8_t>>(content);
+  assert(st->max_common_prefix(content) == content.size());
+  // st->dfs();
+}
+
+size_t strategy_cost(const std::vector<std::pair<bool, size_t>> strategy);
+size_t strategy_cost(const std::vector<std::pair<bool, size_t>> strategy) {
+  size_t total_size = 0;
+  for(auto it: strategy) {
+    // std::cout << it.first << " " << it.second << std::endl;
+    if(it.first) {
+      total_size += complex_overhead;
+    } else {
+      total_size += fixed_overhead + it.second;
+    }
+  }
+  return total_size;
+}
+
+int main(int argc, char **argv) {
+
+  if(argc == 1) {
+    test_uk();
+    test_self(argv[0]);
     return 0;
   }
 
@@ -111,13 +116,8 @@ int main(int argc, char **argv) {
   std::vector<uint16_t> base_content;
   for(auto base_fname: bases) {
     auto content = read_file(base_fname);
-    for(auto& it: content) {
-      if(it == 0) {
-        it = 15;
-      }
-    }
     base_content.insert(base_content.end(), content.begin(), content.end());
-    base_content.push_back(256); // $
+    base_content.push_back(256);
   }
 
   auto target = read_file(target_fname);
@@ -128,23 +128,60 @@ int main(int argc, char **argv) {
   auto be = target_content.begin();
   auto fin = target_content.end();
 
-  std::map<int, int> sizes;
-  while(be != fin ){
+  std::map<size_t, size_t> sizes;
+  auto strr = std::string("std");
+  deb(st->max_common_prefix(std::vector<uint16_t>(strr.begin(), strr.end())));
+  std::vector<std::pair<bool, size_t>> chunks;
+  while(be != fin){
     auto orig = be;
     be = st->max_common_prefix(be, fin);
-    sizes[be - orig] += 1;
-    if(be == orig) {
+    auto len = static_cast<size_t>(be - orig);
+    if(!len) {
+      len += 1;
+      deb(*be);
       ++be;
+    }
+    chunks.emplace_back(true, len);
+    sizes[len] += 1;
+    // while(orig != be) {
+    //   std::cout << static_cast<char>(*orig);
+    //   orig++;
+    // }
+    // std::cout << std::endl;
+    // std::cout << "////////////////////////////////////////////////" << std::endl;
+    // std::cout << std::endl;
+  }
+
+  size_t thres = 3;
+
+  std::cout << "initial strategy cost: " << strategy_cost(chunks) << std::endl;
+
+  // for(auto& it: sizes) {
+  //   std::cout << it.first << " : " << it.second << std::endl;
+  // }
+
+  std::vector<std::pair<bool, size_t>> strategy;
+
+  for(auto it: chunks) {
+    auto sz = it.second;
+    if(!strategy.empty() && !strategy.back().first &&
+        sz <= complex_overhead + thres) {
+        strategy.back().second += sz;
+      } else {
+      strategy.emplace_back(
+          !(sz+ fixed_overhead <= complex_overhead + thres), sz);
     }
   }
 
-  for(auto& it: sizes) {
-    std::cout << it.first << " : " << it.second << std::endl;
-  }
+  auto final_cost = strategy_cost(strategy);
 
-  std::cout << "done" << std::endl;
+  std::cout << "strategy cost after merging small chunks: " << final_cost
+    << std::endl;
 
-  std::vector<long long> parts;
+  std::cout << "target size: " << (target_content.size()) << std::endl;
+  std::cout << "compressed/raw: "
+    << std::setprecision(5) << std::fixed
+    << ((final_cost + 0.0)/target_content.size()) << std::endl;
 
   return 0;
 }
