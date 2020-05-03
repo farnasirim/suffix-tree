@@ -46,7 +46,11 @@ std::vector<uint8_t> read_file(std::string file_name) {
   auto length = is.tellg();
   is.seekg (0, is.beg);
 
-  assert(length > 0);
+  if(!(length > 0)) {
+    std::cout << file_name << " cannot be read" << std::endl;
+    assert(false);
+  }
+
   char *buffer = new char [static_cast<size_t>(length)];
   // read data as a block:
   is.read (buffer, length);
