@@ -25,16 +25,16 @@ void uk(std::string str) {
   // std::cout << std::endl;
   // auto st = std::make_shared<Ukkonen<uint16_t>>(strnums);
 
-  std::vector<char> strnums(str.begin(), str.end());
-  for(auto it: strnums) {
-    std::cout << it << " ";
-  }
-  std::cout << std::endl;
-  auto st = std::make_shared<Ukkonen<char>>(strnums);
-
-  std::cout << "done " << std::endl;
-
-  st->dfs();
+//   std::vector<char> strnums(str.begin(), str.end());
+//   for(auto it: strnums) {
+//     std::cout << it << " ";
+//   }
+//   std::cout << std::endl;
+//   auto st = std::make_shared<Ukkonen<char>>(strnums);
+// 
+//   std::cout << "done " << std::endl;
+// 
+//   // st->dfs();
 }
 
 std::vector<uint8_t> read_file(std::string file_name);
@@ -113,24 +113,23 @@ int main(int argc, char **argv) {
     bases.push_back(argv[i]);
   }
 
-  std::vector<uint16_t> base_content;
+  std::vector<uint8_t> base_content;
   for(auto base_fname: bases) {
     auto content = read_file(base_fname);
     base_content.insert(base_content.end(), content.begin(), content.end());
-    base_content.push_back(256);
   }
 
   auto target = read_file(target_fname);
-  std::vector<uint16_t> target_content(target.begin(), target.end());
+  std::vector<uint8_t> target_content(target.begin(), target.end());
 
-  auto st = std::make_shared<Ukkonen<uint16_t>>(base_content);
+  auto st = std::make_shared<Ukkonen<uint8_t>>(base_content);
 
   auto be = target_content.begin();
   auto fin = target_content.end();
 
   std::map<size_t, size_t> sizes;
   auto strr = std::string("std");
-  deb(st->max_common_prefix(std::vector<uint16_t>(strr.begin(), strr.end())));
+  deb(st->max_common_prefix(std::vector<uint8_t>(strr.begin(), strr.end())));
   std::vector<std::pair<bool, size_t>> chunks;
   while(be != fin){
     auto orig = be;

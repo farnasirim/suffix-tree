@@ -8,6 +8,7 @@
 #include <vector>
 #include <limits>
 #include <iostream>
+#include <unordered_map>
 #include <sstream>
 
 #include "util.h"
@@ -20,17 +21,15 @@ class UkkonenNode {
   using NodeP = std::shared_ptr<UkkonenNode>;
  public:
 
-  UkkonenNode(int from, int to) noexcept: from_(from), to_(to) { }
+  UkkonenNode(int from, int to) noexcept:
+    from_(from), to_(to) { }
 
   NodeP get_child(T ch) const {
     auto it = children_.find(ch);
-    if(it != children_.end()) {
-      return it->second;
+    if(it == children_.end()) {
+      assert(false);
     }
-    deb(ch);
-    deb(this);
-    assert(false);
-    // return nullptr;
+    return it->second;
   }
 
   bool is_leaf() const {
@@ -41,9 +40,9 @@ class UkkonenNode {
     children_[ch] = child;
   }
 
-  const std::map<T, NodeP>& get_children_ref() const {
-    return children_;
-  }
+  // const std::map<T, NodeP>& get_children_ref() const {
+  //   return children_;
+  // }
 
   bool has_child(T next) const {
     return children_.find(next) != children_.end();
@@ -82,7 +81,7 @@ class UkkonenNode {
  private:
   ssize_t from_;
   ssize_t to_;
-  std::map<T, NodeP> children_;
+  std::unordered_map<T, NodeP> children_;
   NodeP link_ = nullptr;
 };
 
@@ -395,11 +394,11 @@ class Ukkonen {
   //  assert(r != nullptr);
   //}
 
-  void dfs() const {
-    debline();
-    dfs(root_, "");
-    debline();
-  }
+  // void dfs() const {
+  //   debline();
+  //   dfs(root_, "");
+  //   debline();
+  // }
 
   size_t max_common_prefix(const std::vector<T>& v) {
     size_t ret = 0;
@@ -451,50 +450,50 @@ class Ukkonen {
 
  private:
 
-  void dfs(NodeP current, std::string indent) const {
-    if(current->get_children_ref().empty()) {
-      auto link = current->get_link_deb();
-      decltype(link.get()) address = nullptr;
-      if(link != nullptr) {
-        address = link.get();
-      }
-      std::cout << current.get() << " (" << address << ")" << std::endl;
-      return;
-    }
+  // void dfs(NodeP current, std::string indent) const {
+  //   if(current->get_children_ref().empty()) {
+  //     auto link = current->get_link_deb();
+  //     decltype(link.get()) address = nullptr;
+  //     if(link != nullptr) {
+  //       address = link.get();
+  //     }
+  //     std::cout << current.get() << " (" << address << ")" << std::endl;
+  //     return;
+  //   }
 
-    std::cout << current.get() << " (" << current->get_link().get() << ")" << std::endl;
+  //   std::cout << current.get() << " (" << current->get_link().get() << ")" << std::endl;
 
-    indent += "              |";
+  //   indent += "              |";
 
-    std::string bef = "-- ";
-    std::string aft = " --> ";
+  //   std::string bef = "-- ";
+  //   std::string aft = " --> ";
 
-    int rem = current->get_children_ref().size();
-    for(auto& [ch, child]: current->get_children_ref()) {
-      std::stringstream ss;
-      ss << "(" << ch << ") ";
-      if(child->get_from() <= child->get_to()) {
-        for(ssize_t i = child->get_from(); i <= std::min(child->get_to(), gind); i++) {
-          assert(i >= 0);
-          ss << str_[static_cast<size_t>(i)];
-        }
-      } else {
-        ss << "EPS" << std::endl;
-      }
-      auto num_spaces = ss.str().size();
-      std::cout << indent << bef << ss.str() << aft;
-      rem -= 1;
-      if(rem == 0) {
-      indent.back() = ' ';
-      }
-      dfs(child,
-          indent +
-          std::string(num_spaces + bef.size() + aft.size(), ' ')
-         );
-    }
-    indent.pop_back();
-    std::cout << indent << std::endl;
-  }
+  //   int rem = current->get_children_ref().size();
+  //   for(auto& [ch, child]: current->get_children_ref()) {
+  //     std::stringstream ss;
+  //     ss << "(" << ch << ") ";
+  //     if(child->get_from() <= child->get_to()) {
+  //       for(ssize_t i = child->get_from(); i <= std::min(child->get_to(), gind); i++) {
+  //         assert(i >= 0);
+  //         ss << str_[static_cast<size_t>(i)];
+  //       }
+  //     } else {
+  //       ss << "EPS" << std::endl;
+  //     }
+  //     auto num_spaces = ss.str().size();
+  //     std::cout << indent << bef << ss.str() << aft;
+  //     rem -= 1;
+  //     if(rem == 0) {
+  //     indent.back() = ' ';
+  //     }
+  //     dfs(child,
+  //         indent +
+  //         std::string(num_spaces + bef.size() + aft.size(), ' ')
+  //        );
+  //   }
+  //   indent.pop_back();
+  //   std::cout << indent << std::endl;
+  // }
 
   std::vector<T> str_;
 
